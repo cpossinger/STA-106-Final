@@ -9,8 +9,7 @@ COVID19[652,c(5:7)] = 0
 
 # Sex
 # Male = 1
-# Female = 2
-# AgeGroup
+# Female = 2 # AgeGroup
 # 0-17 years = 1
 # 18-29 years = 2
 # 30-49 years = 3
@@ -22,14 +21,17 @@ COVID19[652,c(5:7)] = 0
 
 
 COVID19$Sex = ifelse(COVID19$Sex == "Male", 1, 2)
-COVID19$AgeGroup = as.factor(COVID19$AgeGroup)
+COVID19$AgeGroup %<>%  as.factor
+COVID19$Sex %<>%  as.factor
 COVID19$AgeGroup = factor(COVID19$AgeGroup,levels(COVID19$AgeGroup),1:7)
 COVID19$AgeGroup = as.integer(COVID19$AgeGroup)
+#COVID19$COVIDProp <-  2 * asin(sqrt(COVID19$COVIDProp))
 COVID19 = COVID19[-which(COVID19$AgeGroup == 1),]
 #COVID19 = COVID19[-which(COVID19$AgeGroup == 2),]
 #COVID19 = COVID19[-which(COVID19$AgeGroup == 3),]
 COVID19$AgeGroup = factor(COVID19$AgeGroup,2:7,1:6)
 COVID19$AgeGroup = as.integer(COVID19$AgeGroup)
+
 Y = COVID19$COVIDProp
 factorA = COVID19$AgeGroup
 factorB = COVID19$Sex
@@ -80,8 +82,10 @@ residual_plot <- residual_plot + map2(fitted _values,residuals,~geom_segment(
 
 residual_plot
 
-qqnorm(e)
-qqline(e)
+e_standard <- e - (e %>% mean)
+e_standard <- e_standard/e %>% sd
+qqnorm(e_standard)
+qqline(e_standard)
 
 residuals %<>% unlist
 
@@ -194,6 +198,8 @@ F_test_interact <- F_Test_Interaction(AnovaTable,0.05)
 F_test_FactorA <- F_Test_FactorA_Effect(AnovaTable,0.05)
 F_test_FactorB <- F_Test_FactorB_Effect(AnovaTable,0.05)
 
+
+#  Pairwise Comparisons Confidence Intervals
 D11_12 = Yijbar[1,1] - Yijbar[1,2] 
 D21_22 = Yijbar[2,1] - Yijbar[2,2] 
 D31_32 = Yijbar[3,1] -  Yijbar[3,2]
@@ -216,5 +222,124 @@ mydat$upper.bound %<>% multiply_by(100)
 rownames(mydat) = c( "u11-u12",  "u21-u22",  "u31-u32", "u41-u42", "u51-u52", "u61-u62")
 pander(pandoc.table(mydat),style = 'rmarkdown')
 
+# Factor A: AgeGroup Mean Confidence Intervals
+multiple_cfi <- function(Yijbar,alpha,a,b,n,method,g,AnovaTable,factorA,factorB,data){
+ factorA_levels <- data %>% extract2(factorA) %>% levels %>% as.integer() 
+ factorB_levels <- data %>% extract2(factorB) %>% levels %>% as.integer() 
+ 
+ first_row <- c(rep(factorA_levels[1],5),rep(factorA_levels[2],4),rep(factorA_levels[3],3),
+                rep(factorA_levels[4],2),factorA_levels[5],rep(factorA_levels[1],5),
+                rep(factorA_levels[2],4),rep(factorA_levels[3],3),rep(factorA_levels[4],2),factorA_levels[5])
+ 
+ second_row <-c(factorA_levels[2],factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],
+                factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],factorA_levels[4],factorA_levels[5],factorA_levels[6],
+                factorA_levels[5],factorA_levels[6],factorA_levels[6],factorA_levels[2],factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],
+                factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],factorA_levels[4],factorA_levels[5],factorA_levels[6],
+                factorA_levels[5],factorA_levels[6],factorA_levels[6]) 
+ 
+ col <- c(rep(factorB_levels[1],15),rep(factorB_levels[2],15)) 
+ 
+ rows_col_list <- list(first_row,second_row,col)
+   
+ D_hat <- pmap(rows_col_list,~Yijbar[..1,..3] - Yijbar[..2,..3])
+ 
+ B <- qt(1-(alpha/(2*g)),a*b*(n-1))
+ Tukey <- qtukey(1-alpha,a*b,a*b*(n-1))/sqrt(2)
+ print(paste("Bonferroni: ",B))
+ print(paste("Tukey: ",Tukey))
+ if(method == "Bonferroni"){
+   
+ multiplier <- B 
+ }
+ else if(method == "Tukey"){
+ multiplier <- Tukey 
+ }
+ else{
+   return("Invalid Method")
+ }
+
+CI_s = D_hat %>% map(~c(.x - multiplier*sqrt(2*AnovaTable["Error","MS"]/n), .x + multiplier*sqrt(2*AnovaTable["Error","MS"]/n)))
+ 
+ return(CI_s)
+}
+
+CI_s <- multiple_cfi(Yijbar,0.05,6,2,52,"Bonferroni",30,AnovaTable,"AgeGroup","Sex",COVID19)
 
 
+ 
+  D11_21 = Yijbar[1,1] - Yijbar[2,1] 
+  D11_31 = Yijbar[1,1] - Yijbar[3,1] 
+  D11_41 = Yijbar[1,1] -  Yijbar[4,1]
+  D11_51 = Yijbar[1,1] - Yijbar[5,1] 
+  D11_61 = Yijbar[1,1] - Yijbar[6,1] 
+  D21_31 = Yijbar[2,1] -  Yijbar[3,1]
+  D21_41 = Yijbar[2,1] -  Yijbar[4,1]
+  D21_51 = Yijbar[2,1] -  Yijbar[5,1]
+  D21_61 = Yijbar[2,1] -  Yijbar[6,1]
+  D31_41 = Yijbar[3,1] -  Yijbar[4,1]
+  D31_51 = Yijbar[3,1] -  Yijbar[5,1]
+  D31_61 = Yijbar[3,1] -  Yijbar[6,1]
+  D41_51 = Yijbar[4,1] -  Yijbar[5,1]
+  D41_61 = Yijbar[4,1] -  Yijbar[6,1]
+  D51_61 = Yijbar[5,1] -  Yijbar[6,1]
+  
+  
+  D12_22 = Yijbar[1,2] - Yijbar[2,2] 
+  D12_32 = Yijbar[1,2] - Yijbar[3,2] 
+  D12_42 = Yijbar[1,2] -  Yijbar[4,2]
+  D12_52 = Yijbar[1,2] - Yijbar[5,2] 
+  D12_62 = Yijbar[1,2] - Yijbar[6,2] 
+  D22_32 = Yijbar[2,2] -  Yijbar[3,2]
+  D22_42 = Yijbar[2,2] -  Yijbar[4,2]
+  D22_52 = Yijbar[2,2] -  Yijbar[5,2]
+  D22_62 = Yijbar[2,2] -  Yijbar[6,2]
+  D32_42 = Yijbar[3,2] -  Yijbar[4,2]
+  D32_52 = Yijbar[3,2] -  Yijbar[5,2]
+  D32_62 = Yijbar[3,2] -  Yijbar[6,2]
+  D42_52 = Yijbar[4,2] -  Yijbar[5,2]
+  D42_62 = Yijbar[4,2] -  Yijbar[6,2]
+  D52_62 = Yijbar[5,2] -  Yijbar[6,2]
+
+
+multiplier <- B
+CI1 = c(D11_12 - multiplier*sqrt(2*AnovaTable["Error","MS"]/52),D11_12 + multiplier*sqrt(2*AnovaTable["Error","MS"]/52))
+CI2 = c(D21_22 - multiplier*sqrt(2*AnovaTable["Error","MS"]/52),D21_22 + multiplier*sqrt(2*AnovaTable["Error","MS"]/52))
+CI3 = c(D31_32 - multiplier*sqrt(2*AnovaTable["Error","MS"]/52),D31_32 + multiplier*sqrt(2*AnovaTable["Error","MS"]/52))
+CI4 = c(D41_42 - multiplier*sqrt(2*AnovaTable["Error","MS"]/52),D41_42 + multiplier*sqrt(2*AnovaTable["Error","MS"]/52))
+CI5 = c(D51_52 - multiplier*sqrt(2*AnovaTable["Error","MS"]/52),D51_52 + multiplier*sqrt(2*AnovaTable["Error","MS"]/52))
+CI6 = c(D61_62 - multiplier*sqrt(2*AnovaTable["Error","MS"]/52),D61_62 + multiplier*sqrt(2*AnovaTable["Error","MS"]/52))
+
+male_age_df <- 
+
+
+mean.CI<- function(alpha,Yijbar,factorA_level,factorB_level,AnovaTable,a,b,n){
+
+uhat = Yijbar[factorA_level,factorB_level]
+se_u_hat = sqrt(AnovaTable["Error","MS"]/n)
+multiplier = qt(1-alpha/2,df=a*b*(n-1))
+u_ci = c(uhat-multiplier*se_u_hat,uhat+multiplier*se_u_hat)
+return(u_ci)
+}
+
+u11_ci <- mean.CI(0.05,Yijbar,1,1,AnovaTable,6,2,52)
+u12_ci <- mean.CI(0.05,Yijbar,1,2,AnovaTable,6,2,52)
+
+u21_ci <- mean.CI(0.05,Yijbar,2,1,AnovaTable,6,2,52)
+u22_ci <- mean.CI(0.05,Yijbar,2,2,AnovaTable,6,2,52)
+
+u31_ci <- mean.CI(0.05,Yijbar,3,1,AnovaTable,6,2,52)
+u32_ci <- mean.CI(0.05,Yijbar,3,2,AnovaTable,6,2,52)
+
+
+u41_ci <- mean.CI(0.05,Yijbar,4,1,AnovaTable,6,2,52)
+u42_ci <- mean.CI(0.05,Yijbar,4,2,AnovaTable,6,2,52)
+
+
+u51_ci <- mean.CI(0.05,Yijbar,5,1,AnovaTable,6,2,52)
+u52_ci <- mean.CI(0.05,Yijbar,5,2,AnovaTable,6,2,52)
+
+u61_ci <- mean.CI(0.05,Yijbar,6,1,AnovaTable,6,2,52)
+u62_ci <- mean.CI(0.05,Yijbar,6,2,AnovaTable,6,2,52)
+
+
+ci_df <- ("Male" = c(u11_ci,u21_ci,u31_ci,u41_ci,))
