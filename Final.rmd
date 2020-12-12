@@ -8,12 +8,112 @@ output:
     highlight: github
 ---
 
-## Importing Dataset
+## Importing and Cleaning Dataset
 
 ```{r}
 COVID19 = read.table("COVID19.txt", header = T, sep = "\t")
-head(COVID19)
+COVID19[652,c(5:7)] = 0
+factorA = as.factor(COVID19$AgeGroup)
+factorB = as.factor(COVID19$Sex)
+str(COVID19)
+```
+
+## Calculating Least Square Estimates
+
+```{r}
+a = length(unique(factorA))
+b = length(unique(factorB))
+Y = COVID19$COVIDProp
+Yijbar = matrix(0,nrow = a,ncol = b)
+for(i in 1:a)
+{
+  for(j in 1:b)
+  {
+    Yijbar[i,j] = mean(Y[factorA==i&factorB==j])
+  }
+}
+u = mean(Y)
+Yidotbar = apply(Yijbar,MARGIN = 1,mean)
+Ydotjbar  = apply(Yijbar,MARGIN = 2,mean)
+alpha = Yidotbar-u
+beta = Ydotjbar-u
+gamma = matrix(0,nrow = a,ncol = b)
+for(i in 1:a)
+{
+  for(j in 1:b)
+  {
+    gamma[i,j] = Yijbar[i,j]-Yidotbar[i]-Ydotjbar[j]+u
+  }
+}
 ```
 
 
+```{r}
+#  Pairwise Comparisons Confidence Intervals
+D11_12 = Yijbar[1,1] - Yijbar[1,2] 
+D21_22 = Yijbar[2,1] - Yijbar[2,2] 
+D31_32 = Yijbar[3,1] -  Yijbar[3,2]
+D41_42 = Yijbar[4,1] - Yijbar[4,2] 
+D51_52 = Yijbar[5,1] - Yijbar[5,2] 
+D61_62 = Yijbar[6,1] -  Yijbar[6,2]
+B <- qt(1-(0.05/(2*6)),6*2*(51))
+Tukey <- qtukey(0.95,a,6*2*51)/sqrt(2)
+multiplier <- B
+CI1 = c(D11_12 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D11_12 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
+CI2 = c(D21_22 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D21_22 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
+CI3 = c(D31_32 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D31_32 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
+CI4 = c(D41_42 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D41_42 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
+CI5 = c(D51_52 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D51_52 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
+CI6 = c(D61_62 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D61_62 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
+
+mydat = data.frame(lower.bound = c(CI1[1],CI2[1],CI3[1],CI4[1],CI5[1],CI6[1]),upper.bound = c(CI1[2],CI2[2],CI3[2],CI4[2],CI5[2],CI6[2]))
+mydat$lower.bound %<>% multiply_by(100)
+mydat$upper.bound %<>% multiply_by(100)
+rownames(mydat) = c( "u11-u12",  "u21-u22",  "u31-u32", "u41-u42", "u51-u52", "u61-u62")
+pander(pandoc.table(mydat),style = 'rmarkdown')
+
+# Factor A: AgeGroup Mean Confidence Intervals
+multiple_cfi <- function(Yijbar,alpha,a,b,n,method,g,AnovaTable,factorA,factorB,data){
+ factorA_levels <- data %>% extract2(factorA) %>% levels %>% as.integer() 
+ factorB_levels <- data %>% extract2(factorB) %>% levels %>% as.integer() 
+ 
+ first_row <- c(rep(factorA_levels[1],5),rep(factorA_levels[2],4),rep(factorA_levels[3],3),
+                rep(factorA_levels[4],2),factorA_levels[5],rep(factorA_levels[1],5),
+                rep(factorA_levels[2],4),rep(factorA_levels[3],3),rep(factorA_levels[4],2),factorA_levels[5])
+ 
+ second_row <-c(factorA_levels[2],factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],
+                factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],factorA_levels[4],factorA_levels[5],factorA_levels[6],
+                factorA_levels[5],factorA_levels[6],factorA_levels[6],factorA_levels[2],factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],
+                factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],factorA_levels[4],factorA_levels[5],factorA_levels[6],
+                factorA_levels[5],factorA_levels[6],factorA_levels[6]) 
+ 
+ col <- c(rep(factorB_levels[1],15),rep(factorB_levels[2],15)) 
+ 
+ rows_col_list <- list(first_row,second_row,col)
+   
+ D_hat <- pmap(rows_col_list,~Yijbar[..1,..3] - Yijbar[..2,..3])
+ 
+ B <- qt(1-(alpha/(2*g)),a*b*(n-1))
+ Tukey <- qtukey(1-alpha,b,a*b*(n-1))/sqrt(2)
+ print(paste("Bonferroni: ",B))
+ print(paste("Tukey: ",Tukey))
+ if(method == "Bonferroni"){
+   
+ multiplier <- B 
+ }
+ else if(method == "Tukey"){
+ multiplier <- Tukey 
+ }
+ else{
+   return("Invalid Method")
+ }
+
+CI_s = D_hat %>% map(~c(.x - multiplier*sqrt(2*AnovaTable["Error","MS"]/a*n), .x + multiplier*sqrt(2*AnovaTable["Error","MS"]/a*n)))
+ 
+ return(CI_s)
+}
+
+CI_s <- multiple_cfi(Yijbar,0.05,6,2,52,"Bonferroni",30,AnovaTable,"AgeGroup","Sex",COVID19)
+
+```
 
