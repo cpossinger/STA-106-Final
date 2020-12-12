@@ -117,3 +117,241 @@ CI_s <- multiple_cfi(Yijbar,0.05,6,2,52,"Bonferroni",30,AnovaTable,"AgeGroup","S
 
 ```
 
+```{r}
+# Inital Data Prep 
+COVID19 = read.table("COVID19.txt", header = T, sep = "\t")
+COVID19[652,c(5:7)] = 0
+
+COVID19$Sex = ifelse(COVID19$Sex == "Male", 1, 2)
+COVID19$AgeGroup %<>%  as.factor
+COVID19$Sex %<>%  as.factor
+COVID19$AgeGroup = factor(COVID19$AgeGroup,levels(COVID19$AgeGroup),1:7)
+```
+
+
+
+```{r}
+# Inital Histogram AgeGroup 1
+factor_a_level_1_hist <- ggplot(data = COVID19 %>% filter(AgeGroup == "1"),aes(x = COVIDProp))+ 
+  geom_histogram()+xlab("Proportion of Deaths")+ylab("Count")+
+  labs(title = "Proportion of Deaths From People with Ages 0-17 years")
+factor_a_level_1_hist
+
+COVID19 = COVID19[-which(COVID19$AgeGroup == 1),]
+COVID19$AgeGroup = factor(COVID19$AgeGroup,2:7,1:6)
+```
+
+```{r}
+# Model Estimates and Residuals
+model_estimates <- function(a,b,factorA,factorB,Y){
+
+Yijbar = matrix(0,nrow = a,ncol = b)
+for(i in 1:a)
+{
+  for(j in 1:b)
+  {
+    Yijbar[i,j] = mean(Y[factorA==i&factorB==j])
+  }
+}
+u = mean(Y)
+Yidotbar = apply(Yijbar,MARGIN = 1,mean)
+Ydotjbar  = apply(Yijbar,MARGIN = 2,mean)
+alpha = Yidotbar-u
+beta = Ydotjbar-u
+gamma = matrix(0,nrow = a,ncol = b)
+for(i in 1:a)
+{
+  for(j in 1:b)
+  {
+    gamma[i,j] = Yijbar[i,j]-Yidotbar[i]-Ydotjbar[j]+u
+  }
+}
+
+Yhat = rep(0,length(Y))
+for(i in 1:a)
+{
+  for(j in 1:b)
+  {
+    Yhat[factorA==i&factorB==j] = Yijbar[i,j]
+  }
+}
+
+e = Y-Yhat
+
+return(list("Yijbar" = Yijbar,"Alpha" = alpha,"Beta" = beta,"Gamma" = gamma,"Yhat" = Yhat,"Residuals" = e,"Overall Mean" = u))
+}
+
+
+
+Y = COVID19$COVIDProp
+factorA = COVID19$AgeGroup
+factorB = COVID19$Sex
+a = factorA %>% levels %>% length 
+b = factorB %>% levels %>% length 
+n = 52
+
+model_est_resid <- model_estimates(a,b,factorA,factorB,Y)
+
+```
+
+
+
+
+```{r}
+# Residual Plot
+residual_plot <- ggplot()+
+  geom_point(data = COVID19,aes(x = model_est_resid$Yhat, y = model_est_resid$Residuals ,shape = AgeGroup ,color = Sex ))+
+  xlab("Fitted Values")+ylab("Residuals")+scale_color_manual(values = c("lightblue","pink"),labels = c("Male","Female"))+
+  scale_shape_manual(values = c(15,16,17,18,19,20),labels = c("18-29 years","30-49 years","50-64 years","65-74 years","75-84 years","85 years and over"))
+
+
+response_values <- c(rep(COVID19$Sex %>% levels %>% extract(1),6),rep(COVID19$Sex %>% levels %>% extract(2),6)) %>% 
+         map2(rep(COVID19$AgeGroup %>% levels,2),~COVID19 %>%
+         filter(Sex == .x,AgeGroup == .y) %>% extract2("COVIDProp")) 
+
+factor_means <- c(rep(COVID19$Sex %>% levels %>% extract(1),6),rep(COVID19$Sex %>% levels %>% extract(2),6)) %>% 
+         map2(rep(COVID19$AgeGroup %>% levels,2),~COVID19 %>%
+         filter(Sex == .x,AgeGroup == .y) %>% extract2("COVIDProp") %>% mean) %>% unlist
+
+fitted_values <- c(1:12) %>% map2(c(rep(52,12)),~rep(factor_means[.x],.y)) 
+
+residuals <- response_values %>% map2(fitted_values,~.x - .y)
+
+
+residual_plot <- residual_plot + map2(fitted_values,residuals,~geom_segment(
+                                                           aes(x = .x %>% unique,y = .y %>% min,xend = .x %>% unique,
+                                                               yend = .y %>% max),alpha = 0.25))
+
+```
+
+
+
+```{r}
+# QQ Plot
+e_standard <- model_est_resid$Residuals - (model_est_resid$Residuals %>% mean)
+e_standard <- e_standard/model_est_resid$Residuals %>% sd
+
+qq_plot <- ggplot(mapping = aes(sample = e_standard)) + geom_qq()+geom_qq_line(col = 2)+
+  labs(title = "Normal Q-Q Plot")+xlab("Theoretical Quantiles")+
+  ylab("Sample Quantiles")+theme_bw()+theme(panel.grid = element_blank())
+
+qq_plot
+```
+
+
+```{r}
+# Anova Table Function
+Anova.Table <- function(a,b,n,u,e,Yhat,alpha,beta,gamma,Y,factorA,factorB){
+SSA = n*b*sum(alpha^2)
+SSB = n*a*sum(beta^2)
+SSAB = n*sum(gamma^2)
+
+SSE = sum((Y-Yhat)^2)
+SSTotal = sum((Y-u)^2)
+AnovaTable = matrix(0,nrow = 5,ncol = 3)
+AnovaTable[1,1] = SSA
+AnovaTable[1,2] = a-1
+AnovaTable[1,3] = SSA/(a-1)
+AnovaTable[2,1] = SSB
+AnovaTable[2,2] = b-1
+AnovaTable[2,3] = SSB/(b-1)
+AnovaTable[3,1] = SSAB
+AnovaTable[3,2] = (a-1)*(b-1)
+AnovaTable[3,3] = SSAB/((a-1)*(b-1))
+AnovaTable[4,1] = SSE
+AnovaTable[4,2] = a*b*(n-1)
+AnovaTable[4,3] = SSE/(a*b*(n-1))
+AnovaTable[5,1] = SSTotal
+AnovaTable[5,2] = n*a*b-1
+AnovaTable[5,3] = NA
+AnovaTable = as.data.frame(AnovaTable)
+rownames(AnovaTable) = c('Factor A','Factor B','AB Interaction','Error','Total')
+colnames(AnovaTable) = c('SS','df','MS')
+AnovaTable$SS %<>% as.numeric
+AnovaTable$MS %<>% as.numeric
+AnovaTable$df %<>% as.numeric
+return(AnovaTable)
+}
+
+AnovaTable <- Anova.Table(a,b,n,model_est_resid$`Overall Mean`,model_est_resid$Residuals,
+                          model_est_resid$Yhat,model_est_resid$Alpha,model_est_resid$Beta,
+                          model_est_resid$Gamma,Y,factorA,factorB)
+```
+
+
+
+```{r}
+# Interaction Plot
+COVID19 %<>% group_by(AgeGroup,Sex)
+
+interaction_plot <- ggplot(data =COVID19,aes(AgeGroup,COVIDProp,color = Sex,group = Sex)) +
+  stat_summary(fun = mean,geom = "point")+
+  stat_summary(fun = mean,geom = "line")+
+  ylab("Mean Proportion of Deaths")+
+  xlab("Factor A: Age Group" )+
+  labs(color = "Factor B: Sex")+
+  scale_x_discrete(labels = c("18-29 years","30-49 years","50-64 years","65-74 years","75-84 years","85 years and over"))+
+  scale_color_manual(labels = c("Male","Female"),values = c("#7AD7F0","#FF69B4"))
+
+interaction_plot
+
+COVID19 %<>% ungroup
+
+```
+
+
+
+```{r}
+# F test for Interaction/Factor A/Factor B effects
+
+F_Test_Effects <- function(anova_table,alpha){
+  test_stat_interact <- anova_table["AB Interaction","MS"]/anova_table["Error","MS"]
+  critical_value_interact <- qf(1-alpha,anova_table["AB Interaction","df"],anova_table["Error","df"])
+  p_value_interact <- pf(test_stat_interact,anova_table["AB Interaction","df"],anova_table["Error","df"],lower.tail = FALSE)
+  F_test_df_interact <- data.frame("F_Statistic" = test_stat_interact,"F_Critical_Value" = critical_value_interact,"P_Value" = p_value_interact)
+
+  test_stat_a <- anova_table["Factor A","MS"]/anova_table["Error","MS"]
+  critical_value_a <- qf(1-alpha,anova_table["Factor A","df"],anova_table["Error","df"])
+  p_value_a <- pf(test_stat_a,anova_table["Factor A","df"],anova_table["Error","df"],lower.tail = FALSE)
+  F_test_df_a <- data.frame("F_Statistic" = test_stat_a,"F_Critical_Value" = critical_value_a,"P_Value" = p_value_a)
+
+  test_stat_b <- anova_table["Factor B","MS"]/anova_table["Error","MS"]
+  critical_value_b <- qf(1-alpha,anova_table["Factor B","df"],anova_table["Error","df"])
+  p_value_b <- pf(test_stat_b,anova_table["Factor B","df"],anova_table["Error","df"],lower.tail = FALSE)
+  F_test_df_b <- data.frame("F_Statistic" = test_stat_b,"F_Critical_Value" = critical_value_b,"P_Value" = p_value_b)
+  
+  F_test_df <- rbind(F_test_df_interact,F_test_df_a,F_test_df_b)
+  rownames(F_test_df) <- c("Interaction","Factor A Effect","Factor B Effect")
+  return(F_test_df)
+}
+
+F_tests <- F_Test_Effects(AnovaTable,0.05)
+
+F_test_interact <- F_tests["Interaction",] 
+F_test_FactorA <- F_tests["Factor A Effect",] 
+F_test_FactorB <- F_tests["Factor B Effect",] 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
