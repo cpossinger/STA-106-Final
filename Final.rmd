@@ -1,5 +1,5 @@
 ---
-title: "Your Document Title"
+title: "STA 106 Final Project"
 author: "Document Author"
 date: "`r Sys.Date()`"
 output:
@@ -8,131 +8,31 @@ output:
     highlight: github
 ---
 
-## Importing and Cleaning Dataset
+## Data Prep and Exploratory Data Analysis 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(purrr)
+library(magrittr)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(kableExtra)
 
-```{r}
-COVID19 = read.table("COVID19.txt", header = T, sep = "\t")
-COVID19[652,c(5:7)] = 0
-factorA = as.factor(COVID19$AgeGroup)
-factorB = as.factor(COVID19$Sex)
-str(COVID19)
-```
-
-## Calculating Least Square Estimates
-
-```{r}
-a = length(unique(factorA))
-b = length(unique(factorB))
-Y = COVID19$COVIDProp
-Yijbar = matrix(0,nrow = a,ncol = b)
-for(i in 1:a)
-{
-  for(j in 1:b)
-  {
-    Yijbar[i,j] = mean(Y[factorA==i&factorB==j])
-  }
-}
-u = mean(Y)
-Yidotbar = apply(Yijbar,MARGIN = 1,mean)
-Ydotjbar  = apply(Yijbar,MARGIN = 2,mean)
-alpha = Yidotbar-u
-beta = Ydotjbar-u
-gamma = matrix(0,nrow = a,ncol = b)
-for(i in 1:a)
-{
-  for(j in 1:b)
-  {
-    gamma[i,j] = Yijbar[i,j]-Yidotbar[i]-Ydotjbar[j]+u
-  }
-}
-```
-
-
-```{r}
-#  Pairwise Comparisons Confidence Intervals
-D11_12 = Yijbar[1,1] - Yijbar[1,2] 
-D21_22 = Yijbar[2,1] - Yijbar[2,2] 
-D31_32 = Yijbar[3,1] -  Yijbar[3,2]
-D41_42 = Yijbar[4,1] - Yijbar[4,2] 
-D51_52 = Yijbar[5,1] - Yijbar[5,2] 
-D61_62 = Yijbar[6,1] -  Yijbar[6,2]
-B <- qt(1-(0.05/(2*6)),6*2*(51))
-Tukey <- qtukey(0.95,a,6*2*51)/sqrt(2)
-multiplier <- B
-CI1 = c(D11_12 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D11_12 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
-CI2 = c(D21_22 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D21_22 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
-CI3 = c(D31_32 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D31_32 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
-CI4 = c(D41_42 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D41_42 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
-CI5 = c(D51_52 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D51_52 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
-CI6 = c(D61_62 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D61_62 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
-
-mydat = data.frame(lower.bound = c(CI1[1],CI2[1],CI3[1],CI4[1],CI5[1],CI6[1]),upper.bound = c(CI1[2],CI2[2],CI3[2],CI4[2],CI5[2],CI6[2]))
-mydat$lower.bound %<>% multiply_by(100)
-mydat$upper.bound %<>% multiply_by(100)
-rownames(mydat) = c( "u11-u12",  "u21-u22",  "u31-u32", "u41-u42", "u51-u52", "u61-u62")
-pander(pandoc.table(mydat),style = 'rmarkdown')
-
-# Factor A: AgeGroup Mean Confidence Intervals
-multiple_cfi <- function(Yijbar,alpha,a,b,n,method,g,AnovaTable,factorA,factorB,data){
- factorA_levels <- data %>% extract2(factorA) %>% levels %>% as.integer() 
- factorB_levels <- data %>% extract2(factorB) %>% levels %>% as.integer() 
- 
- first_row <- c(rep(factorA_levels[1],5),rep(factorA_levels[2],4),rep(factorA_levels[3],3),
-                rep(factorA_levels[4],2),factorA_levels[5],rep(factorA_levels[1],5),
-                rep(factorA_levels[2],4),rep(factorA_levels[3],3),rep(factorA_levels[4],2),factorA_levels[5])
- 
- second_row <-c(factorA_levels[2],factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],
-                factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],factorA_levels[4],factorA_levels[5],factorA_levels[6],
-                factorA_levels[5],factorA_levels[6],factorA_levels[6],factorA_levels[2],factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],
-                factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],factorA_levels[4],factorA_levels[5],factorA_levels[6],
-                factorA_levels[5],factorA_levels[6],factorA_levels[6]) 
- 
- col <- c(rep(factorB_levels[1],15),rep(factorB_levels[2],15)) 
- 
- rows_col_list <- list(first_row,second_row,col)
-   
- D_hat <- pmap(rows_col_list,~Yijbar[..1,..3] - Yijbar[..2,..3])
- 
- B <- qt(1-(alpha/(2*g)),a*b*(n-1))
- Tukey <- qtukey(1-alpha,b,a*b*(n-1))/sqrt(2)
- print(paste("Bonferroni: ",B))
- print(paste("Tukey: ",Tukey))
- if(method == "Bonferroni"){
-   
- multiplier <- B 
- }
- else if(method == "Tukey"){
- multiplier <- Tukey 
- }
- else{
-   return("Invalid Method")
- }
-
-CI_s = D_hat %>% map(~c(.x - multiplier*sqrt(2*AnovaTable["Error","MS"]/a*n), .x + multiplier*sqrt(2*AnovaTable["Error","MS"]/a*n)))
- 
- return(CI_s)
-}
-
-CI_s <- multiple_cfi(Yijbar,0.05,6,2,52,"Bonferroni",30,AnovaTable,"AgeGroup","Sex",COVID19)
-
-```
-
-```{r}
 # Inital Data Prep 
 COVID19 = read.table("COVID19.txt", header = T, sep = "\t")
 COVID19[652,c(5:7)] = 0
 
-COVID19$Sex = ifelse(COVID19$Sex == "Male", 1, 2)
 COVID19$AgeGroup %<>%  as.factor
 COVID19$Sex %<>%  as.factor
 COVID19$AgeGroup = factor(COVID19$AgeGroup,levels(COVID19$AgeGroup),1:7)
+# 2 is female 1 is Male
+COVID19$Sex = factor(COVID19$Sex,COVID19$Sex %>% levels,2:1) 
 ```
 
 
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Inital Histogram AgeGroup 1
-factor_a_level_1_hist <- ggplot(data = COVID19 %>% filter(AgeGroup == "1"),aes(x = COVIDProp))+ 
+factor_a_level_1_hist <- ggplot(data = COVID19 %>% filter(AgeGroup == 1),aes(x = COVIDProp))+ 
   geom_histogram()+xlab("Proportion of Deaths")+ylab("Count")+
   labs(title = "Proportion of Deaths From People with Ages 0-17 years")
 factor_a_level_1_hist
@@ -141,7 +41,12 @@ COVID19 = COVID19[-which(COVID19$AgeGroup == 1),]
 COVID19$AgeGroup = factor(COVID19$AgeGroup,2:7,1:6)
 ```
 
-```{r}
+
+
+
+## Calculating Least Square Estimates
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Model Estimates and Residuals
 model_estimates <- function(a,b,factorA,factorB,Y){
 
@@ -178,7 +83,7 @@ for(i in 1:a)
 
 e = Y-Yhat
 
-return(list("Yijbar" = Yijbar,"Alpha" = alpha,"Beta" = beta,"Gamma" = gamma,"Yhat" = Yhat,"Residuals" = e,"Overall Mean" = u))
+return(list("Yijbar" = Yijbar,"Alpha" = alpha,"Beta" = beta,"Gamma" = gamma,"Yhat" = Yhat,"Residuals" = e,"Overall_Mean" = u))
 }
 
 
@@ -192,12 +97,26 @@ n = 52
 
 model_est_resid <- model_estimates(a,b,factorA,factorB,Y)
 
+model_est_resid$Overall_Mean %>% 
+   kable(caption = "Overall Mean") %>% 
+   kable_styling(bootstrap_options = "striped",full_width = FALSE,position = "center")
+
+model_est_resid$Alpha %>% 
+   kable(caption = "Alpha Hat") %>% 
+   kable_styling(bootstrap_options = "striped",full_width = FALSE,position = "center")
+
+model_est_resid$Beta %>% 
+   kable(caption = "Beta Hat") %>% 
+   kable_styling(bootstrap_options = "striped",full_width = FALSE,position = "center")
+
+model_est_resid$Gamma %>% 
+   kable(caption = "Gamma Hat") %>% 
+   kable_styling(bootstrap_options = "striped",full_width = FALSE,position = "center")
+
 ```
 
 
-
-
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Residual Plot
 residual_plot <- ggplot()+
   geom_point(data = COVID19,aes(x = model_est_resid$Yhat, y = model_est_resid$Residuals ,shape = AgeGroup ,color = Sex ))+
@@ -221,12 +140,12 @@ residuals <- response_values %>% map2(fitted_values,~.x - .y)
 residual_plot <- residual_plot + map2(fitted_values,residuals,~geom_segment(
                                                            aes(x = .x %>% unique,y = .y %>% min,xend = .x %>% unique,
                                                                yend = .y %>% max),alpha = 0.25))
-
+residual_plot
 ```
 
 
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # QQ Plot
 e_standard <- model_est_resid$Residuals - (model_est_resid$Residuals %>% mean)
 e_standard <- e_standard/model_est_resid$Residuals %>% sd
@@ -236,10 +155,11 @@ qq_plot <- ggplot(mapping = aes(sample = e_standard)) + geom_qq()+geom_qq_line(c
   ylab("Sample Quantiles")+theme_bw()+theme(panel.grid = element_blank())
 
 qq_plot
+
 ```
 
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Anova Table Function
 Anova.Table <- function(a,b,n,u,e,Yhat,alpha,beta,gamma,Y,factorA,factorB){
 SSA = n*b*sum(alpha^2)
@@ -273,14 +193,18 @@ AnovaTable$df %<>% as.numeric
 return(AnovaTable)
 }
 
-AnovaTable <- Anova.Table(a,b,n,model_est_resid$`Overall Mean`,model_est_resid$Residuals,
+AnovaTable <- Anova.Table(a,b,n,model_est_resid$Overall_Mean,model_est_resid$Residuals,
                           model_est_resid$Yhat,model_est_resid$Alpha,model_est_resid$Beta,
                           model_est_resid$Gamma,Y,factorA,factorB)
+AnovaTable %>% 
+   kable(caption = "Anova Table") %>% 
+   kable_styling(bootstrap_options = "striped",full_width = FALSE,position = "center")
+
 ```
 
 
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Interaction Plot
 COVID19 %<>% group_by(AgeGroup,Sex)
 
@@ -301,7 +225,7 @@ COVID19 %<>% ungroup
 
 
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # F test for Interaction/Factor A/Factor B effects
 
 F_Test_Effects <- function(anova_table,alpha){
@@ -327,31 +251,209 @@ F_Test_Effects <- function(anova_table,alpha){
 
 F_tests <- F_Test_Effects(AnovaTable,0.05)
 
-F_test_interact <- F_tests["Interaction",] 
-F_test_FactorA <- F_tests["Factor A Effect",] 
-F_test_FactorB <- F_tests["Factor B Effect",] 
+F_tests %>% 
+   kable(caption = "Anova Table") %>% 
+   kable_styling(bootstrap_options = "striped",full_width = FALSE,position = "center")
+
 ```
 
 
 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#  Pairwise Comparisons Confidence Intervals
+Yijbar <- model_est_resid$Yijbar
+D11_12 = Yijbar[1,1] - Yijbar[1,2] 
+D21_22 = Yijbar[2,1] - Yijbar[2,2] 
+D31_32 = Yijbar[3,1] -  Yijbar[3,2]
+D41_42 = Yijbar[4,1] - Yijbar[4,2] 
+D51_52 = Yijbar[5,1] - Yijbar[5,2] 
+D61_62 = Yijbar[6,1] -  Yijbar[6,2]
+B <- qt(1-(0.05/(2*6)),6*2*(51))
+Tukey <- qtukey(0.95,a,6*2*51)/sqrt(2)
+multiplier <- B
+CI1 = c(D11_12 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D11_12 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
+CI2 = c(D21_22 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D21_22 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
+CI3 = c(D31_32 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D31_32 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
+CI4 = c(D41_42 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D41_42 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
+CI5 = c(D51_52 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D51_52 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
+CI6 = c(D61_62 - multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52),D61_62 + multiplier*sqrt(2*AnovaTable["Error","MS"]/b*52))
+
+mydat = data.frame(lower.bound = c(CI1[1],CI2[1],CI3[1],CI4[1],CI5[1],CI6[1]),upper.bound = c(CI1[2],CI2[2],CI3[2],CI4[2],CI5[2],CI6[2]))
+mydat$lower.bound %<>% multiply_by(100)
+mydat$upper.bound %<>% multiply_by(100)
+rownames(mydat) = c( "u11-u12",  "u21-u22",  "u31-u32", "u41-u42", "u51-u52", "u61-u62")
+
+multiple_cfi_both_factors<- function(Yijbar,alpha,a,b,n,method,g,AnovaTable,factorA_col_1_1,
+                                     factorA_col_2_1,factorA_col_2,factorB_col_1_1,factorB_col_2_1,factorB_col_2){ 
+  
+ rows_col_list_a <- list(factorA_col_1_1,factorA_col_2_1,factorA_col_2)
+ rows_col_list_b <- list(factorB_col_1_1,factorB_col_2_1,factorB_col_2)
+   
+ D_hat_a <- pmap(rows_col_list_a,~Yijbar[..1,..3] - Yijbar[..2,..3])
+ D_hat_b <- pmap(rows_col_list_b,~Yijbar[..1,..3] - Yijbar[..2,..3])
+ 
+ B <- qt(1-(alpha/(2*g)),a*b*(n-1))
+ Tukey_a <- 1/sqrt(2)*qtukey(1-alpha/2,a,a*b*(n-1))
+ Tukey_b <- 1/sqrt(2)*qtukey(1-alpha/2,b,a*b*(n-1))
+ Scheffe <-  sqrt((a+b-2)*qf(1-alpha,a+b-2,(n-1)*a*b))
+ Scheffe_Bonferroni_a <-  sqrt((a-1)*qf(1-alpha/2,a-1,(n-1)*a*b))
+ Scheffe_Bonferroni_b <-  sqrt((b-1)*qf(1-alpha/2,b-1,(n-1)*a*b))
+ 
+ se_a = sqrt(2*AnovaTable["Error","MS"]/(b*n))
+ se_b = sqrt(2*AnovaTable["Error","MS"]/(a*n))
+ 
+ print(paste("Bonferroni:",B))
+ print(paste("Tukey Factor A:",Tukey_a))
+ print(paste("Tukey Factor B:",Tukey_b))
+ print(paste("Scheffe:",Scheffe))
+ print(paste("Scheffe-Bonferroni Factor A:",Scheffe_Bonferroni_a))
+ print(paste("Scheffe-Bonferroni Factor B:",Scheffe_Bonferroni_b))
+ 
+ compare_methods <- data.frame("Methods" = c("Bonferroni","Tukey Factor A","Tukey Factor B","Scheffe","Scheffe-Bonferroni Factor A","Scheffe-Bonferroni Factor B"),"Multipliers" = c(B,Tukey_a,Tukey_b,Scheffe,Scheffe_Bonferroni_a,Scheffe_Bonferroni_b)) 
+ 
+ if(method == "Bonferroni"){
+ multiplier_a <- B 
+ multiplier_b <- B 
+ }
+ else if(method == "Tukey"){
+ multiplier_a <- Tukey_a
+ multiplier_b <- Tukey_b
+ }
+ else if(method == "Scheffe"){
+   multiplier_a <- Scheffe
+   multiplier_b <- Scheffe
+ }
+ else if(method == "Scheffe-Bonferroni"){
+   multiplier_a <- Scheffe_Bonferroni_b
+   multiplier_b <- Scheffe_Bonferroni_b
+ }
+ else{
+   return("Invalid Method")
+ }
+
+CI_s_a = D_hat_a %>% map(~c(.x - multiplier_a*se_a, .x + multiplier_a*se_a))
+CI_s_b = D_hat_b %>% map(~c(.x - multiplier_b*se_b, .x + multiplier_b*se_b))
+CI_s_a <- do.call(rbind,CI_s_a) %>% as.data.frame()
+CI_s_b <- do.call(rbind,CI_s_b) %>% as.data.frame()
+colnames(CI_s_a) <- c("Lower Bound","Upper Bound")
+colnames(CI_s_b) <- c("Lower Bound","Upper Bound")
+rownames(CI_s_a) <- pmap_chr(rows_col_list_a,~paste0("u",..1,..3,"-","u",..2,..3)) 
+rownames(CI_s_b) <- pmap_chr(rows_col_list_b,~paste0("u",..1,..3,"-","u",..2,..3)) 
+
+output_lst <- list("Methods" = compare_methods,"CI_a" = CI_s_a,"CI_b" = CI_s_b)
+return(output_lst)
+}
+
+# Factor A: AgeGroup Mean Confidence Intervals
+
+factorA_levels <- factorA %>% levels %>% as.integer() 
+factorB_levels <- factorB %>% levels %>% as.integer() 
+
+
+# Age Group CI's 
+factorA_col_1_1_AgeGroup <- c(rep(factorA_levels[1],5),rep(factorA_levels[2],4),
+                              rep(factorA_levels[3],3),rep(factorA_levels[4],2),factorA_levels[5])
+
+factorB_col_1_1_AgeGroup <- c(rep(factorA_levels[1],5),rep(factorA_levels[2],4),rep(factorA_levels[3],3),rep(factorA_levels[4],2),
+                              factorA_levels[5])
+               
+factorA_col_2_1_AgeGroup <- c(factorA_levels[2],factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],
+                factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],factorA_levels[4],
+                factorA_levels[5],factorA_levels[6],factorA_levels[5],factorA_levels[6],factorA_levels[6])
+                
+factorB_col_2_1_AgeGroup <- c(factorA_levels[2],factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],
+                factorA_levels[3],factorA_levels[4],factorA_levels[5],factorA_levels[6],factorA_levels[4],
+                factorA_levels[5],factorA_levels[6], factorA_levels[5],factorA_levels[6],factorA_levels[6]) 
+
+factorA_col_2_AgeGroup <- rep(factorB_levels[1],15) 
+factorB_col_2_AgeGroup <- rep(factorB_levels[2],15)
+
+CI_s_AgeGroup <- multiple_cfi_both_factors(model_est_resid$Yijbar,0.05,6,2,52,"Tukey",30,AnovaTable,
+                              factorA_col_1_1_AgeGroup,factorA_col_2_1_AgeGroup,factorA_col_2_AgeGroup,
+                              factorB_col_1_1_AgeGroup,factorB_col_2_1_AgeGroup,factorB_col_2_AgeGroup)
+                              
+CI_s_AgeGroup$Methods %>% 
+   kable(caption = "Methods") %>% 
+   kable_styling(bootstrap_options = "striped",full_width = FALSE,position = "center")
+
+CI_s_AgeGroup$CI_a %>% 
+   kable(caption = "Factor A: Age Group Confidence Intervals") %>% 
+   kable_styling(bootstrap_options = "striped",full_width = FALSE,position = "center")
+
+CI_s_AgeGroup$CI_b %>% 
+   kable(caption = "Factor B: Age Group Confidence Intervals") %>% 
+   kable_styling(bootstrap_options = "striped",full_width = FALSE,position = "center")
+
+
+multiple_cfi_one_factor <- function(Yijbar,alpha,a,b,n,method,g,AnovaTable,factorA,factorB,data,col_1_1,col_2_1,col_2,factor_considered){
+
+ rows_col_list <- list(col_1_1,col_2_1,col_2)
+   
+ D_hat <- pmap(rows_col_list,~Yijbar[..1,..3] - Yijbar[..2,..3])
+ 
+ B <- qt(1-(alpha/(2*g)),a*b*(n-1))
+ 
+ if(factor_considered == "factorA"){
+ Tukey <- 1/sqrt(2) * qtukey(1-alpha,a,a*b*(n-1))
+ Scheffe = sqrt((a-1)*qf(1-alpha,a-1,(n-1)*a*b))
+ se <-  sqrt(2*AnovaTable["Error","MS"]/(b*n))
+ }
+ else if(factor_considered == "factorB"){
+ Tukey <- 1/sqrt(2) * qtukey(1-alpha,b,a*b*(n-1))
+ Scheffe = sqrt((a-1)*qf(1-alpha,b-1,(n-1)*a*b))
+ se <-  sqrt(2*AnovaTable["Error","MS"]/(a*n))
+ }
+ else{
+   print("Invalid Factor")
+   
+ }
+ compare_methods <- data.frame("Methods" = c("Bonferroni","Tukey","Scheffe"),"Multipliers" = c(B,Tukey,Scheffe))
+ 
+ print(paste("Bonferroni: ",B))
+ print(paste("Tukey: ",Tukey))
+ print(paste("Scheffe: ",Scheffe))
+ if(method == "Bonferroni"){
+   
+ multiplier <- B 
+ }
+ else if(method == "Tukey"){
+ multiplier <- Tukey 
+ }
+ else if(method == "Scheffe"){
+   multiplier <- Scheffe
+ }
+ else{
+   return("Invalid Method")
+ }
+
+CI_s = D_hat %>% map(~c(.x - multiplier*se, .x + multiplier*se))
+CI_s <- do.call(rbind,CI_s) %>% as.data.frame()
+colnames(CI_s) <- c("Lower Bound","Upper Bound")
+rownames(CI_s) <- pmap_chr(rows_col_list,~paste0("u",..1,..3,"-","u",..2,..3)) 
+
+output_lst <- list("Methods" = compare_methods,"CIs" = CI_s)
+return(output_lst)
+}
+
+# Sex CI_s
+col_1_1_Sex <- rep(1,6) 
+col_2_1_Sex <- rep(2,6) 
+
+col_2_Sex <- 1:6 
+
+
+CI_s_Sex <- multiple_cfi_one_factor(model_est_resid$Yijbar %>% t,0.05,6,2,52,"Tukey",6,AnovaTable,"AgeGroup","Sex",
+                         COVID19,col_1_1_Sex,col_2_1_Sex,col_2_Sex,"factorB")
+
+CI_s_Sex$Methods %>% 
+   kable(caption = "Methods") %>% 
+   kable_styling(bootstrap_options = "striped",full_width = FALSE,position = "center")
+
+CI_s_Sex$CIs %>% 
+   kable(caption = "Factor B: Sex Confidence Intervals") %>% 
+   kable_styling(bootstrap_options = "striped",full_width = FALSE,position = "center")
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
 
