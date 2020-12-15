@@ -188,15 +188,15 @@ residual_plot_covid <- ggplot()+
   
 
 
-response_values_covid <- c(rep(COVID19$Sex %>% levels %>% extract(1),6),rep(COVID19$Sex %>% levels %>% extract(2),6)) %>% 
+response_values_covid <- c(rep(COVID19$Sex %>% levels %>% extract(1),6),rep(COVID19$Sex %>% levels %>% extract(2),6)) %>%
          map2(rep(COVID19$AgeGroup %>% levels,2),~COVID19 %>%
-         filter(Sex == .x,AgeGroup == .y) %>% extract2("COVIDProp")) 
+         filter(Sex == .x,AgeGroup == .y) %>% extract2("COVIDProp"))
 
-factor_means_covid <- c(rep(COVID19$Sex %>% levels %>% extract(1),6),rep(COVID19$Sex %>% levels %>% extract(2),6)) %>% 
+factor_means_covid <- c(rep(COVID19$Sex %>% levels %>% extract(1),6),rep(COVID19$Sex %>% levels %>% extract(2),6)) %>%
          map2(rep(COVID19$AgeGroup %>% levels,2),~COVID19 %>%
          filter(Sex == .x,AgeGroup == .y) %>% extract2("COVIDProp") %>% mean) %>% unlist
 
-fitted_values_covid <- c(1:12) %>% map2(c(rep(52,12)),~rep(factor_means_covid[.x],.y)) 
+fitted_values_covid <- c(1:12) %>% map2(c(rep(52,12)),~rep(factor_means_covid[.x],.y))
 
 residuals_covid <- response_values_covid %>% map2(fitted_values_covid,~.x - .y)
 
@@ -267,7 +267,7 @@ residual_plot_pneumonia
 
 ```
 
-From our residual plots, we can see that the variances for each treatment combination of age group and gender are similar in covid 19, influenza, and pneumonia Our equal variance assumption is not violated.
+From our residual plots, we can see that the variances for each treatment combination of age group and gender are similar in covid 19 and pneumonia Our equal variance assumption is not violated. However for Influenza the variance for the first group is zero since all of the values are zero. This group is vastly different from the other groups so this violates the constant variance assumption.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # QQ Plot
@@ -397,7 +397,7 @@ AnovaTable_covid <- Anova.Table(a,b,n,model_est_resid_covid$Overall_Mean,model_e
                           model_est_resid_covid$Gamma,Y,factorA,factorB)
 AnovaTable_pneumonia <- Anova.Table(a,b,n,model_est_resid_pneumonia$Overall_Mean,model_est_resid_pneumonia$Residuals,
                           model_est_resid_pneumonia$Yhat,model_est_resid_pneumonia$Alpha,model_est_resid_pneumonia$Beta,
-                          model_est_resid_pneumonia$Gamma,Y,factorA,factorB)
+                          model_est_resid_pneumonia$Gamma,P,factorA,factorB)
 
 output_lst_anova_table <- list(AnovaTable_covid,AnovaTable_pneumonia)
 output_lst_anova_table %>% 
@@ -458,12 +458,12 @@ Test Statistic: $F^* = MSAB/MSE = (SSAB/(a-1)(b-1))/ (SSE/(nab-ab))$
 
 Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 11,612 }$
 
-Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no interaction effect present in our study. 
+Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 0.05 significance level and think that there is no interaction effect present in our study. 
 
 
 Test for Factor A effect
 
-$H_o: \alpha_1 = \alpha_2 = \alpha_3 = \alpha_4 = \alpha_5 = \alpha_6 $
+$H_o: \alpha_1 = \alpha_2 = \alpha_3 = \alpha_4 = \alpha_5 = \alpha_6$
 
 $H_a:$ Not all $\alpha_i$ equal to 0
 
@@ -487,7 +487,7 @@ Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\al
 
 This is our function in order to test for the factor B effect. The test statistic will divide the mean squared of Factor B by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor B and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05.
 
-Conclusion: Since the test statistic is greater than the critical value, we reject the null hypothesis at the 5% significance level and think that there is factor B effect (Sex) in our study.
+Conclusion: Since the test statistic is greater than the critical value, we reject the null hypothesis at the 0.05 significance level and think that there is factor B effect (Sex) in our study.
 
 Pneumonia 
 
@@ -501,12 +501,12 @@ Test Statistic: $F^* = MSAB/MSE = (SSAB/(a-1)(b-1))/ (SSE/(nab-ab))$
 
 Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 11,612 }$
 
-Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no interaction effect present in our study. 
+Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 0.05 significance level and think that there is no interaction effect present in our study. 
 
 
 Test for Factor A effect
 
-$H_o: \alpha_1 = \alpha_2 = \alpha_3 = \alpha_4 = \alpha_5 = \alpha_6 $
+$H_o: \alpha_1 = \alpha_2 = \alpha_3 = \alpha_4 = \alpha_5 = \alpha_6$
 
 $H_a:$ Not all $\alpha_i$ equal to 0
 
@@ -516,7 +516,7 @@ Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\al
 
 This is our function in order to test for the factor A effect. The test statistic will divide the mean squared of Factor A by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor A and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05
 
-Conclusion: Since the test statistic is greater than the critical value, we reject the null hypothesis at the 5% significance level and think that there is factor A effect (Age group) in our study.
+Conclusion: Since the test statistic is greater than the critical value, we reject the null hypothesis at the 0.05 significance level and think that there is factor A effect (Age group) in our study.
 
 Test for Factor B effect
 
@@ -530,7 +530,7 @@ Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\al
 
 This is our function in order to test for the factor B effect. The test statistic will divide the mean squared of Factor B by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor B and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05.
 
-Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no factor B effect (Sex) in our study.
+Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 0.05 significance level and conclude that there is no factor B effect (Sex) in our study.
 
 
 
@@ -1001,7 +1001,7 @@ In the Covid 19 interaction plot, we can see that there is no interaction effect
 
 In the influenza interaction plot, we can see that there is interaction effect because the lines intersect. We can also see that there is Factor A effect as the mean line is not horizontal. We can also see that there is Factor B effect as the means of the lines are not at the same level. 
 
-In the pneumonia interaction plot, we can see that there is no interaction effect because the lines do not intersect.We can also see that there is no Factor A effect as the mean line is close to horizontal. We can also see that there is Factor B effect as the means of the lines are not at the same level. We will test this further. 
+In the pneumonia interaction plot, we can see that there is interaction effect because the lines do intersect. We can also see that there is Factor A effect as the mean line is not horizontal. We can also see that there is Factor B effect as the means of the lines are not at the same level. We will test this further. 
 
 ## Formal Analysis of Main Factor and Interaction Effects
 
@@ -1013,7 +1013,7 @@ AnovaTable_covid <- Anova.Table(a,b,n,model_est_resid_covid$Overall_Mean,model_e
 
 AnovaTable_pneumonia <- Anova.Table(a,b,n,model_est_resid_pneumonia$Overall_Mean,model_est_resid_pneumonia$Residuals,
                           model_est_resid_pneumonia$Yhat,model_est_resid_pneumonia$Alpha,model_est_resid_pneumonia$Beta,
-                          model_est_resid_pneumonia$Gamma,Y,factorA,factorB)
+                          model_est_resid_pneumonia$Gamma,P,factorA,factorB)
 
 
 output_lst_anova_table <- list(AnovaTable_covid,AnovaTable_pneumonia)
@@ -1098,11 +1098,11 @@ Test Statistic: $F^* = MSAB/MSE = (SSAB/(a-1)(b-1))/ (SSE/(nab-ab))$
 
 Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 5,311 }$
 
-Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no interaction effect present in our study. 
+Conclusion: Since the test statistic is greater than the critical value, we reject the null hypothesis at the 0.05 significance level and think that there is an interaction effect present in our study. 
 
 Test for Factor A effect
 
-$H_o: \alpha_1 = \alpha_2 = \alpha_3 = \alpha_4 = \alpha_5 = \alpha_6 $
+$H_o: \alpha_1 = \alpha_2 = \alpha_3 = \alpha_4 = \alpha_5 = \alpha_6$
 
 $H_a:$ Not all $\alpha_i$ equal to 0
 
@@ -1112,7 +1112,7 @@ Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\al
 
 This is our function in order to test for the factor A effect. The test statistic will divide the mean squared of Factor A by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor A and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05
 
-Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no factor A effect (Age group) in our study.
+Conclusion: Since the test statistic is greater than the critical value, we reject the null hypothesis at the 0.05 significance level and think that there is a factor A effect (Age group) in our study.
 
 Test for Factor B effect
 
@@ -1126,14 +1126,14 @@ Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\al
 
 This is our function in order to test for the factor B effect. The test statistic will divide the mean squared of Factor B by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor B and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05.
 
-Conclusion: Since the test statistic is greater than the critical value, we reject the null hypothesis at the 5% significance level and think that there is factor B effect (Sex) in our study.
+Conclusion: Since the test statistic is greater than the critical value, we reject the null hypothesis at the 0.05 significance level and think that there is factor B effect (Sex) in our study.
 
 
 ## Conclusion
 
 After analyzing our data, we have sufficient evidence to state there is an association that age has more an effect than gender on COVID 19 distribution of deaths. Since this is an observational study, causation does not equal correlation so we cannot make any further conclusions about this relationship. We can also see that the proportion of male deaths related to COVID 19 is greater than that of the proportion of female deaths related to COVID 19. Because we cannot randomly assign the treatments in this study which are the different diseases, it is difficult to obtain a meaningful and clear conclusion. Furthermore, we are unsure of how this data was collected, including whether the population groups were randomly selected. There are several confounding variables including income of participants which can affect accessibility to covid tests, populations of the states, varying health guidelines of the states, and the political majorities within the states. 
 
-Most of the pneumonia cases probably resulted from Covid 19 cases that had escalated over time. We can expand upon our analysis from this study by studying specific individuals who have the same demographics (age, gender,income) rather than the proportions of deaths caused by the diseases in various states.
+Most of the pneumonia cases probably resulted from Covid 19 cases that had escalated over time. Influenza had an abnormally small amount of deaths most likely because of public health guidelines such as mask mandates and social distancing. We can expand upon our analysis from this study by studying specific individuals who have the same demographics (age, gender,income) rather than the proportions of deaths caused by the diseases in various states.
 
 
 
