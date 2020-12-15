@@ -349,11 +349,11 @@ COVID19 %<>% ungroup
 
 ```
 
-From the interaction plots for Covid 19, influenza, and pneumonia proportion of deaths, we can see that the Covid 19 interaction plot has no interaction effect since the lines are close to parallel. There is Factor A effect since the mean line is not horizontal. There is Factor B effect since the means of the lines are not at the same level. We will test this further.
+From the interaction plots for Covid 19, influenza, and pneumonia proportion of deaths, we can see that the Covid 19 interaction plot has no interaction effect since the lines are close to parallel. There is Factor A effect since the mean line is not horizontal. There is Factor B effect since the means of the lines are not at the same level. We will test this further. We will test this further.
 
 We can see that the influenza interaction plot has interaction effect since the lines intersect. We can also see that there is Factor A effect since the mean line is not horizontal. There is Factor B effect since the means of the lines are not at the same level. 
 
-We can see that the pneumonia interaction plot seems to have no interaction plot as the lines are closely parallel. We can also see that there is Factor A effect since the mean line is not horizontal. There is Factor B effect since the means of the lines are not at the same level. 
+We can see that the pneumonia interaction plot seems to have no interaction plot as the lines are closely parallel. We can also see that there is Factor A effect since the mean line is not horizontal. There is no Factor B effect since the means of the lines seem to be at the same level. We will test this further. 
 
 
 ## Formal Analysis of Main Factor and Interaction Effects
