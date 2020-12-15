@@ -1,6 +1,6 @@
 ---
 title: "STA 106 Final Project"
-author: "Document Author"
+author: "Ambar Mishra, Austin Chen, Camden Possinger, Sai Sriya Mudigonda"
 date: "`r Sys.Date()`"
 output:
   prettydoc::html_pretty:
@@ -32,6 +32,8 @@ COVID19$AgeGroup = factor(COVID19$AgeGroup,levels(COVID19$AgeGroup),1:7)
 COVID19$Sex = factor(COVID19$Sex,COVID19$Sex %>% levels,2:1) 
 ```
 
+
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 hist_covid <- ggplot(data = COVID19,aes(x = COVIDProp))+ 
   geom_histogram()+xlab("Proportion of Total Deaths")+ylab("Count")+
@@ -50,7 +52,7 @@ hist_pneumonia
 
 ```
 
-
+The histograms for Covid 19, pneumonia, and influenza proportion of deaths is heavily right tailed. We will do a square root transformation of the data to make our model assumptions valid. 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Inital Histogram AgeGroup 1
@@ -78,7 +80,7 @@ COVID19$PneumoniaProp<- COVID19$PneumoniaProp %>% sqrt
 
 ```
 
-
+Since the Age group 0-17 years old has mostly zeros for the three diseases, we will eliminate this age group from our study as it does not provide much significance. 
 
 
 ## Calculating Least Square Estimates
@@ -262,7 +264,7 @@ residual_plot_pneumonia
 
 ```
 
-
+From our residual plots, we can see that the variances for each treatment combination of age group and gender are similar in covid 19, influenza, and pneumonia Our equal variance assumption is not violated.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # QQ Plot
@@ -298,6 +300,8 @@ qq_plot_pneumonia
 
 ```
 
+As we can see from our normal qq plots for Covid 19 and pneumonia, we can see that most of the points are on the linear line. This suggests the data for the Covid 19 and pneumonia proportion of deaths is normally distributed.
+However, in the normal qq plot for influenza, we can see that most of the points are not on the linear line and is heavily tailed on the left side. This suggests the data for the influenza proportion of deaths is not normally distributed. We will not continue to study influenza as it violates our model assumptions. 
 
 
 
@@ -342,6 +346,13 @@ interaction_plot_pneumonia
 COVID19 %<>% ungroup
 
 ```
+
+From the interaction plots for Covid 19, influenza, and pneumonia proportion of deaths, we can see that the Covid 19 interaction plot has no interaction effect since the lines are close to parallel. There is Factor A effect since the mean line is not horizontal. There is Factor B effect since the means of the lines are not at the same level. We will test this further.
+
+We can see that the influenza interaction plot has interaction effect since the lines intersect. We can also see that there is Factor A effect since the mean line is not horizontal. There is Factor B effect since the means of the lines are not at the same level. 
+
+We can see that the pneumonia interaction plot seems to have no interaction plot as the lines are closely parallel. We can also see that there is Factor A effect since the mean line is not horizontal. There is Factor B effect since the means of the lines are not at the same level. 
+
 
 ## Formal Analysis of Main Factor and Interaction Effects
 
@@ -433,6 +444,93 @@ F_tests_pneumonia %>%
 
 ```
 
+Covid 19
+
+Test for Interaction Effect
+
+$H_o: \gamma_{ij} = 0\space i = 1,2,3,4,5,6; j = 1,2$
+
+$H_a: Not \space all \space \gamma_{ij's} = 0$
+
+Test Statistic: $F^* = MSAB/MSE = (SSAB/(a-1)(b-1))/ (SSE/(nab-ab))$
+
+Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 11,612 }$
+
+Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no interaction effect present in our study. 
+
+
+Test for Factor A effect
+
+$H_o: \alpha_1 = \alpha_2 = \alpha_3 = \alpha_4 = \alpha_5 = \alpha_6 $
+
+$H_a:$ Not all $\alpha_i$ equal to 0
+
+Test Statistic: $F^* = MSA/MSE = (SSA/(a-1))/ (SSE/(nab-ab))$
+
+Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 5, 612 }$
+
+This is our function in order to test for the factor A effect. The test statistic will divide the mean squared of Factor A by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor A and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05
+
+Conclusion: Since the test statistic is greater than the critical value, we reject the null hypothesis at the 5% significance level and think that there is factor A effect (Age group) in our study.
+
+Test for Factor B effect
+
+$H_o: \beta_1 = \beta_2$
+
+$H_a:$ Not all $\beta_i$ equal to 0
+
+Test Statistic: $F^* = MSB/MSE = (SSB/(b-1))/ (SSE/(nab-ab))$
+
+Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 1, 612}$
+
+This is our function in order to test for the factor B effect. The test statistic will divide the mean squared of Factor B by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor B and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05.
+
+Conclusion: Since the test statistic is greater than the critical value, we reject the null hypothesis at the 5% significance level and think that there is factor B effect (Sex) in our study.
+
+Pneumonia 
+
+Test for Interaction Effect
+
+$H_o: \gamma_{ij} = 0\space i = 1,2,3,4,5,6; j = 1,2$
+
+$H_a: Not \space all \space \gamma_{ij's} = 0$
+
+Test Statistic: $F^* = MSAB/MSE = (SSAB/(a-1)(b-1))/ (SSE/(nab-ab))$
+
+Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 11,612 }$
+
+Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no interaction effect present in our study. 
+
+
+Test for Factor A effect
+
+$H_o: \alpha_1 = \alpha_2 = \alpha_3 = \alpha_4 = \alpha_5 = \alpha_6 $
+
+$H_a:$ Not all $\alpha_i$ equal to 0
+
+Test Statistic: $F^* = MSA/MSE = (SSA/(a-1))/ (SSE/(nab-ab))$
+
+Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 5, 612 }$
+
+This is our function in order to test for the factor A effect. The test statistic will divide the mean squared of Factor A by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor A and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05
+
+Conclusion: Since the test statistic is greater than the critical value, we reject the null hypothesis at the 5% significance level and think that there is factor A effect (Age group) in our study.
+
+Test for Factor B effect
+
+$H_o: \beta_1 = \beta_2$
+
+$H_a:$ Not all $\beta_i$ equal to 0
+
+Test Statistic: $F^* = MSB/MSE = (SSB/(b-1))/ (SSE/(nab-ab))$
+
+Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 1, 612}$
+
+This is our function in order to test for the factor B effect. The test statistic will divide the mean squared of Factor B by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor B and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05.
+
+Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no factor B effect (Sex) in our study.
+
+
 
 ## Factor Mean Estimates
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -484,7 +582,70 @@ output_lst_factor_mean_CI_pneumonia%>%
 
 ```
 
+Covid 19
 
+Male
+
+We are 95% confident that the true mean Covid 19 proportions of death for 18-29 years old who are male is between 0.0003592 and 0.0046095.
+
+We are 95% confident that the true mean Covid 19 proportions of death for 30-49 years old who are male is between 0.0261013 and 0.0443105.
+
+
+We are 95% confident that the true mean Covid 19 proportions of death for 50-64 years old who are male is between 0.0471147 and 0.0707565.
+
+We are 95% confident that the true mean Covid 19 proportions of death for 65-74 years old who are male is between 0.0622769 and 0.0890993.
+
+We are 95% confident that the true mean Covid 19 proportions of death for 75-84 years old who are male is between 0.0692211 and 0.0973694.
+
+We are 95% confident that the true mean Covid 19 proportions of death for 85 years and older who are male is between 0.0630930 and 0.0900750.
+
+
+Female
+
+
+We are 95% confident that the true mean Covid 19 proportions of death for 18-29 years old who are female is between 0.0003568 and 0.0046011.
+
+We are 95% confident that the true mean Covid 19 proportions of death for 30-49 years old who are female is between 0.0168993 and 0.0320192.
+
+We are 95% confident that the true mean Covid 19 proportions of death for 50-64 years old who are female is between 0.0409434 and 0.0631449.
+
+We are 95% confident that the true mean Covid 19 proportions of death for 65-74 years old who are female is between 0.0527491 and 0.0776255.
+
+We are 95% confident that the true mean Covid 19 proportions of death for 75-84 years old who are female is between 0.0575533 and 0.0834311.
+
+We are 95% confident that the true mean Covid 19 proportions of death for 85 years and older who are female is between 0.0579880 and 0.0839543.
+
+Pneumonia 
+
+Male 
+
+We are 95% confident that the true mean pneumonia proportions of death for 18-29 years old who are male is between 0.0016339 and 0.0086253.
+
+We are 95% confident that the true mean pneumonia proportions of death for 30-49 years old who are male is between 0.027957 and 0.0482489.
+
+We are 95% confident that the true mean pneumonia proportions of death for 50-64 years old who are male is between 0.062021 and 0.0908977.
+
+We are 95% confident that the true mean pneumonia proportions of death for 65-74 years old who are male is between 0.0792087 and 0.1114837.
+
+We are 95% confident that the true mean pneumonia proportions of death for 75-84 years old who are male is between 0.0863118 and 0.1198822.
+
+We are 95% confident that the true mean pneumonia proportions of death for 85 years and older who are male is between 0.0819341 and 0.1147128.
+
+
+Female:
+
+
+We are 95% confident that the true mean pneumonia proportions of death for 18-29 years old who are female is between 0.0019415 and 0.0093149.
+
+We are 95% confident that the true mean pneumonia proportions of death for 30-49 years old who are female is between 0.028838 and 0.049404.
+
+We are 95% confident that the true mean pneumonia proportions of death for 50-64 years old who are female is between 0.066379 and 0.0961580.
+
+We are 95% confident that the true mean pneumonia proportions of death for 65-74 years old who are female is between 0.0750540 and 0.1065443.
+
+We are 95% confident that the true mean pneumonia proportions of death for 75-84 years old who are female is between 0.0726316 and 0.1036544.
+
+We are 95% confident that the true mean pneumonia proportions of death for 85 years and older who are female is between 0.0599460 and 0.0883815.
 
 
 ## Factor A and Factor B Family Pairwise Comparisons 
@@ -592,6 +753,9 @@ output_lst_both_cis_b %>%
 
 ```
 
+Since the smallest multiplier is in Tukey-Bonferroni procedure, but Tukey-Bonferroni Factor A is larger than the Bonferroni multiplier, we can choose the procedure of our choice. We decided to go with the Bonferroni procedure. 
+
+We are 95% confident that the true mean difference of the Covid 19 and pneumonia proportion of deaths for Factor A (Age Group) and Factor B(Sex) is as follows. 
 
 # Analysis of the Three Oldest Age Groups
 
@@ -610,6 +774,8 @@ COVID19$COVIDProp <- COVID19$COVIDProp %>% sqrt
 COVID19$InfluenzaProp <- COVID19$InfluenzaProp %>% sqrt
 COVID19$PneumoniaProp<- COVID19$PneumoniaProp %>% sqrt
 ```
+
+We do a square root transformation as done previously in the beginning of our study. 
 
 ## Model Estimates
 
@@ -750,6 +916,8 @@ residual_plot_pneumonia
 
 ```
 
+From our residual plots, we can see that the variances for each treatment combination of age group and gender are similar in covid 19, influenza, and pneumonia Our equal variance assumption is not violated.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # QQ Plot
 e_standard_covid <- model_est_resid_covid$Residuals - (model_est_resid_covid$Residuals %>% mean)
@@ -783,7 +951,8 @@ qq_plot_pneumonia
 
 ```
 
-
+As we can see from our normal qq plots for Covid 19 and pneumonia, we can see that most of the points are on the linear line. This suggests the data for the Covid 19 and pneumonia proportion of deaths is normally distributed.
+However, in the normal qq plot for influenza, we can see that most of the points are not on the linear line and is heavily tailed on the left side. This suggests the data for the influenza proportion of deaths is not normally distributed. We will not continue to study influenza as it violates our model assumptions. 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Interaction Plot
@@ -827,6 +996,12 @@ COVID19 %<>% ungroup
 
 ```
 
+In the Covid 19 interaction plot, we can see that there is no interaction effect because the lines do not intersect. We can also see that there is no Factor A effect as the mean line is close to horizontal. We can also see that there is Factor B effect as the means of the lines are not at the same level. We will test this further.
+
+In the influenza interaction plot, we can see that there is interaction effect because the lines intersect. We can also see that there is Factor A effect as the mean line is not horizontal. We can also see that there is Factor B effect as the means of the lines are not at the same level. 
+
+In the pneumonia interaction plot, we can see that there is no interaction effect because the lines do not intersect.We can also see that there is no Factor A effect as the mean line is close to horizontal. We can also see that there is Factor B effect as the means of the lines are not at the same level. We will test this further. 
+
 ## Formal Analysis of Main Factor and Interaction Effects
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -868,9 +1043,96 @@ F_tests_pneumonia %>%
 
 ```
 
+Covid 19
+
+Test for Interaction Effect
+
+$H_o: \gamma_{ij} = 0\space i = 1,2,3; j = 1,2$
+
+$H_a: Not \space all \space \gamma_{ij's} = 0$
+
+Test Statistic: $F^* = MSAB/MSE = (SSAB/(a-1)(b-1))/ (SSE/(nab-ab))$
+
+Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 5,311 }$
+
+Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no interaction effect present in our study. 
+
+Test for Factor A effect
+
+$H_o: \alpha_1 = \alpha_2 = \alpha_3 = \alpha_4 = \alpha_5 = \alpha_6 $
+
+$H_a:$ Not all $\alpha_i$ equal to 0
+
+Test Statistic: $F^* = MSA/MSE = (SSA/(a-1))/ (SSE/(nab-ab))$
+
+Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 2, 311 }$
+
+This is our function in order to test for the factor A effect. The test statistic will divide the mean squared of Factor A by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor A and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05
+
+Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no factor A effect (Age group) in our study.
+
+Test for Factor B effect
+
+$H_o: \beta_1 = \beta_2$
+
+$H_a:$ Not all $\beta_i$ equal to 0
+
+Test Statistic: $F^* = MSB/MSE = (SSB/(b-1))/ (SSE/(nab-ab))$
+
+Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 1, 311}$
+
+This is our function in order to test for the factor B effect. The test statistic will divide the mean squared of Factor B by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor B and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05.
+
+Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no factor B effect (Sex) in our study.
+
+Pneumonia 
+
+Test for Interaction Effect
+
+$H_o: \gamma_{ij} = 0\space i = 1,2,3; j = 1,2$
+
+$H_a: Not \space all \space \gamma_{ij's} = 0$
+
+Test Statistic: $F^* = MSAB/MSE = (SSAB/(a-1)(b-1))/ (SSE/(nab-ab))$
+
+Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 5,311 }$
+
+Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no interaction effect present in our study. 
+
+Test for Factor A effect
+
+$H_o: \alpha_1 = \alpha_2 = \alpha_3 = \alpha_4 = \alpha_5 = \alpha_6 $
+
+$H_a:$ Not all $\alpha_i$ equal to 0
+
+Test Statistic: $F^* = MSA/MSE = (SSA/(a-1))/ (SSE/(nab-ab))$
+
+Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 2, 311 }$
+
+This is our function in order to test for the factor A effect. The test statistic will divide the mean squared of Factor A by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor A and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05
+
+Conclusion: Since the test statistic is less than the critical value, we fail to reject the null hypothesis at the 5% significance level and think that there is no factor A effect (Age group) in our study.
+
+Test for Factor B effect
+
+$H_o: \beta_1 = \beta_2$
+
+$H_a:$ Not all $\beta_i$ equal to 0
+
+Test Statistic: $F^* = MSB/MSE = (SSB/(b-1))/ (SSE/(nab-ab))$
+
+Decision Rule: Reject $H_o$ at $\alpha$ significance level if $F^*$ > $F_{1 -\alpha, 1, 311}$
+
+This is our function in order to test for the factor B effect. The test statistic will divide the mean squared of Factor B by its mean squared error (MSE). Our critical value will be based on the qf function for the degrees of freedom of Factor B and error. We solve the p-value in a similar way and we finally end with a data frame containing the p-value, critical value and test statistic. This function allows us to input our ANOVA table values and our significance level of 0.05.
+
+Conclusion: Since the test statistic is greater than the critical value, we reject the null hypothesis at the 5% significance level and think that there is factor B effect (Sex) in our study.
+
 
 ## Conclusion
 
+After analyzing our data, we have sufficient evidence to state there is an association that age has more an effect than gender on COVID 19 distribution of deaths. Since this is an observational study, causation does not equal correlation so we cannot make any further conclusions about this relationship. We can also see that the proportion of male deaths related to COVID 19 is greater than that of the proportion of female deaths related to COVID 19. Because we cannot randomly assign the treatments in this study which are the different diseases, it is difficult to obtain a meaningful and clear conclusion. Furthermore, we are unsure of how this data was collected, including whether the population groups were randomly selected. There are several confounding variables including income of participants which can affect accessibility to covid tests, populations of the states, varying health guidelines of the states, and the political majorities within the states. 
+
+Most of the pneumonia cases probably resulted from Covid 19 cases that had escalated over time. We can expand upon our analysis from this study by studying specific individuals who have the same demographics (age, gender,income) rather than the proportions of deaths caused by the diseases in various states.
 
 
 
