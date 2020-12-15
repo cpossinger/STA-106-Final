@@ -38,16 +38,17 @@ COVID19$Sex = factor(COVID19$Sex,COVID19$Sex %>% levels,2:1)
 hist_covid <- ggplot(data = COVID19,aes(x = COVIDProp))+ 
   geom_histogram()+xlab("Proportion of Total Deaths")+ylab("Count")+
   labs(title = "Proportion of Total Deaths Related to Covid19")
-hist_covid
 
 hist_influenza <- ggplot(data = COVID19 ,aes(x = InfluenzaProp))+ 
   geom_histogram()+xlab("Proportion of Total Deaths")+ylab("Count")+
   labs(title = "Proportion of Total Deaths Related to Influenza")
-hist_influenza
 
 hist_pneumonia <- ggplot(data = COVID19,aes(x = PneumoniaProp))+ 
   geom_histogram()+xlab("Proportion of Total Deaths")+ylab("Count")+
   labs(title = "Proportion of Total Deaths Related to Pnuemonia")
+
+hist_covid
+hist_influenza
 hist_pneumonia
 
 ```
@@ -203,7 +204,6 @@ residuals_covid <- response_values_covid %>% map2(fitted_values_covid,~.x - .y)
 residual_plot_covid <- residual_plot_covid + map2(fitted_values_covid,residuals_covid,~geom_segment(
                                                            aes(x = .x %>% unique,y = .y %>% min,xend = .x %>% unique,
                                                                yend = .y %>% max),alpha = 0.25))
-residual_plot_covid
 
 
 
@@ -231,7 +231,6 @@ residuals_influenza <- response_values_influenza %>% map2(fitted_values_influenz
 residual_plot_influenza <- residual_plot_influenza + map2(fitted_values_influenza,residuals_influenza,~geom_segment(
                                                            aes(x = .x %>% unique,y = .y %>% min,xend = .x %>% unique,
                                                                yend = .y %>% max),alpha = 0.25))
-residual_plot_influenza
 
 
 
@@ -260,7 +259,11 @@ residuals_pneumonia <- response_values_pneumonia %>% map2(fitted_values_pneumoni
 residual_plot_pneumonia <- residual_plot_pneumonia + map2(fitted_values_pneumonia,residuals_pneumonia,~geom_segment(
                                                            aes(x = .x %>% unique,y = .y %>% min,xend = .x %>% unique,
                                                                yend = .y %>% max),alpha = 0.25))
+
+residual_plot_covid
+residual_plot_influenza
 residual_plot_pneumonia
+
 
 ```
 
@@ -275,7 +278,6 @@ qq_plot_covid <- ggplot(mapping = aes(sample = e_standard_covid)) + geom_qq()+ge
   labs(title = "Covid-19 Normal Q-Q Plot")+xlab("Theoretical Quantiles")+
   ylab("Sample Quantiles")+theme_bw()+theme(panel.grid = element_blank())
 
-qq_plot_covid
 
 
 e_standard_influenza <- model_est_resid_influenza$Residuals - (model_est_resid_influenza$Residuals %>% mean)
@@ -285,7 +287,6 @@ qq_plot_influenza <- ggplot(mapping = aes(sample = e_standard_influenza)) + geom
   labs(title = "Influenza Normal Q-Q Plot")+xlab("Theoretical Quantiles")+
   ylab("Sample Quantiles")+theme_bw()+theme(panel.grid = element_blank())
 
-qq_plot_influenza
 
 
 e_standard_pneumonia <- model_est_resid_pneumonia$Residuals - (model_est_resid_pneumonia$Residuals %>% mean)
@@ -295,8 +296,9 @@ qq_plot_pneumonia <- ggplot(mapping = aes(sample = e_standard_pneumonia)) + geom
   labs(title = "Pneumonia Normal Q-Q Plot")+xlab("Theoretical Quantiles")+
   ylab("Sample Quantiles")+theme_bw()+theme(panel.grid = element_blank())
 
+qq_plot_covid
+qq_plot_influenza
 qq_plot_pneumonia
-
 
 ```
 
@@ -318,7 +320,6 @@ interaction_plot_covid <- ggplot(data =COVID19,aes(AgeGroup,COVIDProp,color = Se
   scale_x_discrete(labels = c("18-29 years","30-49 years","50-64 years","65-74 years","75-84 years","85 years and over"))+
   scale_color_manual(labels = c("Male","Female"),values = c("#7AD7F0","#FF69B4"))
 
-interaction_plot_covid
 
 interaction_plot_influenza <- ggplot(data =COVID19,aes(AgeGroup,InfluenzaProp,color = Sex,group = Sex)) +
   stat_summary(fun = mean,geom = "point")+
@@ -329,7 +330,6 @@ interaction_plot_influenza <- ggplot(data =COVID19,aes(AgeGroup,InfluenzaProp,co
   scale_x_discrete(labels = c("18-29 years","30-49 years","50-64 years","65-74 years","75-84 years","85 years and over"))+
   scale_color_manual(labels = c("Male","Female"),values = c("#7AD7F0","#FF69B4"))
 
-interaction_plot_influenza
 
 interaction_plot_pneumonia <- ggplot(data =COVID19,aes(AgeGroup,PneumoniaProp,color = Sex,group = Sex)) +
   stat_summary(fun = mean,geom = "point")+
@@ -340,6 +340,8 @@ interaction_plot_pneumonia <- ggplot(data =COVID19,aes(AgeGroup,PneumoniaProp,co
   scale_x_discrete(labels = c("18-29 years","30-49 years","50-64 years","65-74 years","75-84 years","85 years and over"))+
   scale_color_manual(labels = c("Male","Female"),values = c("#7AD7F0","#FF69B4"))
 
+interaction_plot_covid
+interaction_plot_influenza
 interaction_plot_pneumonia
 
 
@@ -855,7 +857,6 @@ residuals_covid <- response_values_covid %>% map2(fitted_values_covid,~.x - .y)
 residual_plot_covid <- residual_plot_covid + map2(fitted_values_covid,residuals_covid,~geom_segment(
                                                            aes(x = .x %>% unique,y = .y %>% min,xend = .x %>% unique,
                                                                yend = .y %>% max),alpha = 0.25))
-residual_plot_covid
 
 
 
@@ -883,7 +884,6 @@ residuals_influenza <- response_values_influenza %>% map2(fitted_values_influenz
 residual_plot_influenza <- residual_plot_influenza + map2(fitted_values_influenza,residuals_influenza,~geom_segment(
                                                            aes(x = .x %>% unique,y = .y %>% min,xend = .x %>% unique,
                                                                yend = .y %>% max),alpha = 0.25))
-residual_plot_influenza
 
 
 
@@ -912,8 +912,9 @@ residuals_pneumonia <- response_values_pneumonia %>% map2(fitted_values_pneumoni
 residual_plot_pneumonia <- residual_plot_pneumonia + map2(fitted_values_pneumonia,residuals_pneumonia,~geom_segment(
                                                            aes(x = .x %>% unique,y = .y %>% min,xend = .x %>% unique,
                                                                yend = .y %>% max),alpha = 0.25))
+residual_plot_covid
+residual_plot_influenza
 residual_plot_pneumonia
-
 ```
 
 From our residual plots, we can see that the variances for each treatment combination of age group and gender are similar in covid 19, influenza, and pneumonia Our equal variance assumption is not violated.
@@ -927,7 +928,6 @@ qq_plot_covid <- ggplot(mapping = aes(sample = e_standard_covid)) + geom_qq()+ge
   labs(title = "Covid-19 Normal Q-Q Plot")+xlab("Theoretical Quantiles")+
   ylab("Sample Quantiles")+theme_bw()+theme(panel.grid = element_blank())
 
-qq_plot_covid
 
 
 e_standard_influenza <- model_est_resid_influenza$Residuals - (model_est_resid_influenza$Residuals %>% mean)
@@ -937,7 +937,6 @@ qq_plot_influenza <- ggplot(mapping = aes(sample = e_standard_influenza)) + geom
   labs(title = "Influenza Normal Q-Q Plot")+xlab("Theoretical Quantiles")+
   ylab("Sample Quantiles")+theme_bw()+theme(panel.grid = element_blank())
 
-qq_plot_influenza
 
 
 e_standard_pneumonia <- model_est_resid_pneumonia$Residuals - (model_est_resid_pneumonia$Residuals %>% mean)
@@ -947,6 +946,8 @@ qq_plot_pneumonia <- ggplot(mapping = aes(sample = e_standard_pneumonia)) + geom
   labs(title = "Pneumonia Normal Q-Q Plot")+xlab("Theoretical Quantiles")+
   ylab("Sample Quantiles")+theme_bw()+theme(panel.grid = element_blank())
 
+qq_plot_covid
+qq_plot_influenza
 qq_plot_pneumonia
 
 ```
@@ -967,7 +968,6 @@ interaction_plot_covid <- ggplot(data =COVID19,aes(AgeGroup,COVIDProp,color = Se
   scale_x_discrete(labels = c("65-74 years","75-84 years","85 years and over"))+
   scale_color_manual(labels = c("Male","Female"),values = c("#7AD7F0","#FF69B4"))
 
-interaction_plot_covid
 
 interaction_plot_influenza <- ggplot(data =COVID19,aes(AgeGroup,InfluenzaProp,color = Sex,group = Sex)) +
   stat_summary(fun = mean,geom = "point")+
@@ -978,7 +978,6 @@ interaction_plot_influenza <- ggplot(data =COVID19,aes(AgeGroup,InfluenzaProp,co
   scale_x_discrete(labels = c("65-74 years","75-84 years","85 years and over"))+
   scale_color_manual(labels = c("Male","Female"),values = c("#7AD7F0","#FF69B4"))
 
-interaction_plot_influenza
 
 interaction_plot_pneumonia <- ggplot(data =COVID19,aes(AgeGroup,PneumoniaProp,color = Sex,group = Sex)) +
   stat_summary(fun = mean,geom = "point")+
@@ -989,8 +988,10 @@ interaction_plot_pneumonia <- ggplot(data =COVID19,aes(AgeGroup,PneumoniaProp,co
   scale_x_discrete(labels = c("65-74 years","75-84 years","85 years and over"))+
   scale_color_manual(labels = c("Male","Female"),values = c("#7AD7F0","#FF69B4"))
 
-interaction_plot_pneumonia
 
+interaction_plot_covid
+interaction_plot_influenza
+interaction_plot_pneumonia
 
 COVID19 %<>% ungroup
 
